@@ -2,7 +2,7 @@
 //  Grammar+Generable.swift
 //  MLXStructured
 //
-//  Created by Codex on 22.02.2026.
+//  Created by Rudrank Riyam on 21.09.2025.
 //
 
 import Foundation

@@ -62,6 +62,30 @@ let iterator = try TokenIterator(input: input, model: context.model, processor: 
 
 You can find more usage examples in the `MLXStructuredCLI` target and in the unit tests.
 
+### Using @Generable (iOS 26 / macOS 26)
+
+By default the demo feeds the tokenizer a plain JSON schema string. If you build against the iOS 26 / macOS 26 SDKs (the only ones that ship the FoundationModels framework) you can opt into the `@Generable` schema and decode the result into the `MovieRecord` struct by passing `--use-generable-schema`.
+
+## CLI Demo
+
+Build and run the example tool:
+
+```shell
+swift run MLXStructuredCLI generate
+```
+
+Use the regular schema:
+
+```shell
+swift run MLXStructuredCLI generate
+```
+
+Switch to the `@Generable` flow (macOS 26 / iOS 26 SDKs required):
+
+```shell
+swift run MLXStructuredCLI generate --use-generable-schema
+```
+
 ## Experiments
 
 ### Performance

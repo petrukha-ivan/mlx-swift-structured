@@ -1,10 +1,10 @@
-# MLXStructured
+# MLX Structured
 
-MLXStructured is a Swift library for structured output generation using constrained decoding in [MLX](https://github.com/ml-explore/mlx-swift). It's built on top of the [XGrammar](https://github.com/mlc-ai/xgrammar) library, which provides efficient, flexible, and portable structured generation. You can learn more about the XGrammar algorithm in their [technical report](https://arxiv.org/abs/2411.15100).
+[MLX](https://github.com/ml-explore/mlx-swift) Structured is a Swift library for structured output generation using constrained decoding. It's built on top of the [XGrammar](https://github.com/mlc-ai/xgrammar) library, which provides efficient, flexible, and portable structured generation. You can learn more about the XGrammar algorithm in their [technical report](https://arxiv.org/abs/2411.15100).
 
 ## Installation
 
-To use `MLXStructured` in your project, add the following to your `Package.swift` file:
+To use MLX Structured in your project, add the following to your `Package.swift` file:
 
 ```swift
 dependencies: [
@@ -39,6 +39,22 @@ let grammar = try Grammar.schema(.object(
 ))
 ```
 
+Starting with macOS 26 and iOS 26, you can use a `@Generable` type as a grammar source:
+
+```swift
+@Generable
+struct PersonInfo {
+    
+    @Guide(description: "Person name")
+    let name: String
+    
+    @Guide(description: "Person age")
+    let age: Int
+}
+
+let grammar = try Grammar.schema(generable: PersonInfo.self)
+```
+
 You can also use regex:
 
 ```swift
@@ -61,30 +77,6 @@ let iterator = try TokenIterator(input: input, model: context.model, processor: 
 ```
 
 You can find more usage examples in the `MLXStructuredCLI` target and in the unit tests.
-
-### Using @Generable (iOS 26 / macOS 26)
-
-By default the demo feeds the tokenizer a plain JSON schema string. If you build against the iOS 26 / macOS 26 SDKs (the only ones that ship the FoundationModels framework) you can opt into the `@Generable` schema and decode the result into the `MovieRecord` struct by passing `--use-generable-schema`.
-
-## CLI Demo
-
-Build and run the example tool:
-
-```shell
-swift run MLXStructuredCLI generate
-```
-
-Use the regular schema:
-
-```shell
-swift run MLXStructuredCLI generate
-```
-
-Switch to the `@Generable` flow (macOS 26 / iOS 26 SDKs required):
-
-```shell
-swift run MLXStructuredCLI generate --use-generable-schema
-```
 
 ## Experiments
 
@@ -155,7 +147,7 @@ For large proprietary models like ChatGPT, this is not a problem. With the right
 This output has several issues:
 
 - Root starts with `[` instead of `{`
-- Incorrect key and type for `genre` instead of `genres`
+- Incorrect key and type for `genres` field
 - Missing required `year` field
 - Duplicated `actors` field
 - Extra `description` field
@@ -180,7 +172,7 @@ Here is the output using constrained decoding:
 }
 ```
 
-The order of keys here is random because `Dictionary` in Swift is unordered. I plan to address this in the future. However, the output is fully valid JSON that exactly matches the provided schema. This shows that, with the right approach, even small models like Gemma3 270M (4-bit, only 150 MB!) can produce correct structured output.
+The order of keys here is random because `Dictionary` in Swift is unordered. I plan to address this in the future. However, the output is fully valid JSON that exactly matches the provided schema. This shows that, with the right approach, even small models like Gemma3 270M 4-bit (which is just 150 MB) can produce correct structured output.
 
 ## Troubleshooting
 

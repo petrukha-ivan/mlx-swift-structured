@@ -62,9 +62,9 @@ class XGrammar {
             regex.utf8CString.withUnsafeBufferPointer {
                 compile_regex_grammar(tokenizerInfo, $0.baseAddress, $0.count)
             }
-        case .schema(let schema) where !schema.isEmpty:
+        case .schema(let schema, let indent) where !schema.isEmpty:
             schema.utf8CString.withUnsafeBufferPointer {
-                compile_json_schema_grammar(tokenizerInfo, $0.baseAddress, $0.count)
+                compile_json_schema_grammar(tokenizerInfo, $0.baseAddress, $0.count, indent.map(Int32.init) ?? -1)
             }
         default:
             throw XGrammarError.failedToInitializeCompiledGrammar

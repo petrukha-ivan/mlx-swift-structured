@@ -35,7 +35,7 @@ struct GenerateStructuredOutputCommand: AsyncParsableCommand {
 //        let configuration = ModelConfiguration(id: "mlx-community/gemma-3-270m-it-4bit", extraEOSTokens: ["<end_of_turn>"])
         let configuration = ModelConfiguration(id: "Qwen/Qwen3-1.7B-MLX-4bit")
         let context = try await LLMModelFactory.shared.load(configuration: configuration) { progress in
-            debugPrint("Loading model: \(progress.fractionCompleted.formatted(.percent))")
+            print("Loading model: \(progress.fractionCompleted.formatted(.percent))")
         }
         
         let grammar = try MovieRecordDemo.makeGrammar(useGenerable: useGenerableSchema)
@@ -43,6 +43,7 @@ struct GenerateStructuredOutputCommand: AsyncParsableCommand {
         
         // Plain generation
         do {
+            print("Starting plain generation..")
             let input = try await context.processor.prepare(input: .init(prompt: prompt))
             let sampler = ArgMaxSampler()
             let iterator = try TokenIterator(input: input, model: context.model, processor: nil, sampler: sampler, maxTokens: 256)
@@ -51,12 +52,14 @@ struct GenerateStructuredOutputCommand: AsyncParsableCommand {
                 outputTokens.append(token)
                 return .more
             }
-            debugPrint(completionInfo.summary())
-            debugPrint("Plain generation:", context.tokenizer.decode(tokens: outputTokens))
+            print(completionInfo.summary())
+            let outputString = context.tokenizer.decode(tokens: outputTokens)
+            print("Plain generation:\n\(String.divider)\n\(outputString)\n\(String.divider)\n")
         }
         
         // Constrained generation
         do {
+            print("Starting constrained generation..")
             let input = try await context.processor.prepare(input: .init(prompt: prompt))
             let sampler = ArgMaxSampler()
             let processor = try await GrammarMaskedLogitProcessor.from(configuration: configuration, grammar: grammar)
@@ -66,21 +69,21 @@ struct GenerateStructuredOutputCommand: AsyncParsableCommand {
                 outputTokens.append(token)
                 return .more
             }
-            debugPrint(completionInfo.summary())
-            let constrained = context.tokenizer.decode(tokens: outputTokens)
-            debugPrint("Constrained generation:", constrained)
+            print(completionInfo.summary())
+            let outputString = context.tokenizer.decode(tokens: outputTokens)
+            print("Constrained generation:\n\(String.divider)\n\(outputString)\n\(String.divider)\n")
 
             if useGenerableSchema {
                 #if compiler(>=6.2)
                 if #available(macOS 26.0, iOS 26.0, *) {
                     do {
-                        let record = try MovieRecord(.init(json: constrained))
-                        debugPrint("Parsed movie record:", record)
+                        let record = try MovieRecord(.init(json: outputString))
+                        print("Parsed movie record:", record)
                     } catch {
-                        debugPrint("Failed to decode MovieRecord:", error)
+                        print("Failed to decode MovieRecord:", error)
                     }
                 } else {
-                    debugPrint("Warning: Generable decoding requested on an unsupported platform.")
+                    print("Warning: Generable decoding requested on an unsupported platform.")
                 }
                 #else
                 print("Warning: Generable decoding requested on an unsupported platform.")
@@ -107,13 +110,13 @@ private enum MovieRecordDemo {
             guard #available(macOS 26.0, iOS 26.0, *) else {
                 throw ValidationError("@Generable schemas require macOS 26 / iOS 26 or later.")
             }
-            debugPrint("Using @Generable schema for: \(MovieRecord.self)")
+            print("Using @Generable schema for: \(MovieRecord.self)")
             return try Grammar.schema(generable: MovieRecord.self)
             #else
             throw ValidationError("@Generable schemas require Swift 6.2 or later.")
             #endif
         } else {
-            return .schema(rawSchema)
+            return .schema(rawSchema, indent: 2)
         }
     }
 
@@ -166,3 +169,7 @@ struct MovieRecord: Codable {
     let actors: [String]
 }
 #endif
+
+extension String {
+    static let divider = String(repeating: "-", count: 64)
+}

@@ -11,15 +11,15 @@ import JSONSchema
 public enum Grammar {
     case ebnf(String)
     case regex(String)
-    case schema(String)
+    case schema(String, indent: Int? = nil)
 }
 
 public extension Grammar {
-    static func schema(_ schema: JSONSchema = .object()) throws -> Grammar {
+    static func schema(_ schema: JSONSchema = .object(), indent: Int? = nil) throws -> Grammar {
         let encoder = JSONEncoder()
         let data = try encoder.encode(schema)
         let string = String(decoding: data, as: UTF8.self)
-        return .schema(string)
+        return .schema(string, indent: indent)
     }
 }
 
@@ -31,7 +31,7 @@ public extension Grammar {
             return ebnf
         case .regex(let regex):
             return regex
-        case .schema(let schema):
+        case .schema(let schema, _):
             return schema
         }
     }
@@ -42,7 +42,7 @@ public extension Grammar {
             return nil
         case .regex(let regex):
             return "Output is regex constrained: \(regex)"
-        case .schema(let schema):
+        case .schema(let schema, _):
             return "Output is JSON schema constrained: \(schema)"
         }
     }

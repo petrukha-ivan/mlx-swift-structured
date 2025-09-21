@@ -21,7 +21,8 @@ void* compile_regex_grammar(
 void* compile_json_schema_grammar(
     void* tokenizer_info,
     const char* schema_utf8,
-    size_t schema_len
+    size_t schema_len,
+    int indent
 );
 
 void compiled_grammar_free(void* compiled_grammar);

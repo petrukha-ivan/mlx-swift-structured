@@ -13,7 +13,10 @@ import MLXLMCommon
 import MLXLLM
 import MLX
 import Hub
+
+#if canImport(FoundationModels)
 import FoundationModels
+#endif
 
 @main
 struct GenerateStructuredOutputCommand: AsyncParsableCommand {

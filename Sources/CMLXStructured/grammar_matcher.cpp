@@ -1,4 +1,5 @@
-#include "mlx_structured.h"
+#include "mlx_structured/error_handler.h"
+#include "mlx_structured/grammar_matcher.h"
 #include <dlpack/dlpack.h>
 #include <xgrammar/matcher.h>
 
@@ -9,7 +10,8 @@ extern "C" void* grammar_matcher_new(void* compiled_grammar) {
         auto* compiled_grammar_ptr = static_cast<CompiledGrammar*>(compiled_grammar);
         auto* grammar_matcher_ptr = new GrammarMatcher(*compiled_grammar_ptr);
         return grammar_matcher_ptr;
-    } catch (...) { // TODO: Add error descriptions
+    } catch (const std::exception& e) {
+        catch_error(e.what());
         return nullptr;
     }
 }
@@ -22,7 +24,8 @@ extern "C" bool grammar_matcher_fill_next_token_bitmask(
         auto* grammar_matcher_ptr = static_cast<GrammarMatcher*>(grammar_matcher);
         auto* next_token_bitmask_ptr = static_cast<DLTensor*>(next_token_bitmask);
         return grammar_matcher_ptr->FillNextTokenBitmask(next_token_bitmask_ptr);
-    } catch (...) {
+    } catch (const std::exception& e) {
+        catch_error(e.what());
         return false;
     }
 }
@@ -34,7 +37,8 @@ extern "C" bool grammar_matcher_accept_token(
     try {
         auto* grammar_matcher_ptr = static_cast<GrammarMatcher*>(grammar_matcher);
         return grammar_matcher_ptr->AcceptToken(token_id);
-    } catch (...) {
+    } catch (const std::exception& e) {
+        catch_error(e.what());
         return false;
     }
 }
@@ -43,8 +47,9 @@ extern "C" void grammar_matcher_reset(void* grammar_matcher) {
     try {
         auto* grammar_matcher_ptr = static_cast<GrammarMatcher*>(grammar_matcher);
         grammar_matcher_ptr->Reset();
-    } catch (...) {
-        return;
+    } catch (const std::exception& e) {
+        catch_error(e.what());
+        return false;
     }
 }
 

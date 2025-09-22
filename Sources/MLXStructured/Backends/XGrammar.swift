@@ -10,13 +10,41 @@ import CMLXStructured
 import MLX
 
 enum XGrammarError: Error {
-    case failedToInitializeTokenizerInfo // TODO: Add error descriptions
-    case failedToInitializeCompiledGrammar
-    case failedToInitializeGrammarMatcher
+    case emptyGrammar
+    case invalidGrammar(String)
+    case invalidVocab(String)
+    case unknown(String)
 }
 
-class XGrammar {
-    
+private let errorHandler = {
+    let handler = ErrorHandler()
+    set_error_handler(errorHandlerClosure)
+    return handler
+}()
+
+private let errorHandlerClosure: @convention(c) (UnsafePointer<CChar>?) -> Void = {
+    errorHandler.lastErrorMessage = $0.map {
+        String(cString: $0)
+    }
+}
+
+private class ErrorHandler: @unchecked Sendable {
+    let lock = NSLock()
+    var _lastErrorMessage: String? = nil
+    var lastErrorMessage: String? {
+        get { lock.withLock { _lastErrorMessage } }
+        set { lock.withLock { _lastErrorMessage = newValue } }
+    }
+}
+
+private extension XGrammar {
+    static var lastErrorMessage: String {
+        errorHandler.lastErrorMessage ?? "Unknown Error"
+    }
+}
+
+final class XGrammar {
+            
     private let vocabSize: Int
     private let bufferSize: Int
     private let bitmap: MLXArray
@@ -29,6 +57,7 @@ class XGrammar {
         stopTokenIds: [Int32] = [],
         grammar: Grammar
     ) throws {
+        let _ = errorHandler // Start capturing errors
         let vocab = vocab.map { strdup($0) }
         let tokenizerInfo = vocab.map({ UnsafePointer($0) }).withUnsafeBufferPointer { vocabBuffer in
             stopTokenIds.withUnsafeBufferPointer { stopTokenIdsBuffer in
@@ -50,24 +79,24 @@ class XGrammar {
         }
         
         guard let tokenizerInfo else {
-            throw XGrammarError.failedToInitializeTokenizerInfo
+            throw XGrammarError.invalidVocab(XGrammar.lastErrorMessage)
         }
         
         let compiledGrammar = switch grammar {
-        case .ebnf(let ebnf) where !ebnf.isEmpty:
+        case _ where grammar.raw.isEmpty:
+            throw XGrammarError.emptyGrammar
+        case .ebnf(let ebnf):
             ebnf.utf8CString.withUnsafeBufferPointer {
                 compile_ebnf_grammar(tokenizerInfo, $0.baseAddress, $0.count)
             }
-        case .regex(let regex) where !regex.isEmpty:
+        case .regex(let regex):
             regex.utf8CString.withUnsafeBufferPointer {
                 compile_regex_grammar(tokenizerInfo, $0.baseAddress, $0.count)
             }
-        case .schema(let schema, let indent) where !schema.isEmpty:
+        case .schema(let schema, let indent):
             schema.utf8CString.withUnsafeBufferPointer {
-                compile_json_schema_grammar(tokenizerInfo, $0.baseAddress, $0.count, indent.map(Int32.init) ?? -1)
+                compile_json_schema_grammar(tokenizerInfo, $0.baseAddress, $0.count, Int32(indent ?? -1))
             }
-        default:
-            throw XGrammarError.failedToInitializeCompiledGrammar
         }
         
         defer {
@@ -75,7 +104,7 @@ class XGrammar {
         }
         
         guard let compiledGrammar else {
-            throw XGrammarError.failedToInitializeCompiledGrammar
+            throw XGrammarError.invalidGrammar(XGrammar.lastErrorMessage)
         }
         
         var bitmap = [Float](repeating: 0, count: 256 * 8)
@@ -86,7 +115,7 @@ class XGrammar {
         }
         
         guard let grammarMatcher = grammar_matcher_new(compiledGrammar) else {
-            throw XGrammarError.failedToInitializeGrammarMatcher
+            throw XGrammarError.unknown(XGrammar.lastErrorMessage)
         }
         
         self.vocabSize = vocab.count

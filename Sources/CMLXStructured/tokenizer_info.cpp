@@ -1,5 +1,6 @@
-#include "mlx_structured.h"
-#include <xgrammar/matcher.h>
+#include "mlx_structured/error_handler.h"
+#include "mlx_structured/tokenizer_info.h"
+#include <xgrammar/tokenizer_info.h>
 
 using namespace xgrammar;
 
@@ -22,7 +23,8 @@ extern "C" void* tokenizer_info_new(
         
         auto* tokenizer_info = new TokenizerInfo(encoded_vocab, VocabType(vocab_type), vocab_size, stops, false);
         return tokenizer_info;
-    } catch (...) {
+    } catch (const std::exception& e) {
+        catch_error(e.what());
         return nullptr;
     }
 }

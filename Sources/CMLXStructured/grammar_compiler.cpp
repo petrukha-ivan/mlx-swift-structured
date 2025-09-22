@@ -1,4 +1,5 @@
-#include "mlx_structured.h"
+#include "mlx_structured/error_handler.h"
+#include "mlx_structured/grammar_compiler.h"
 #include <xgrammar/matcher.h>
 
 using namespace xgrammar;
@@ -15,7 +16,8 @@ extern "C" void* compile_ebnf_grammar(
             GrammarCompiler(tokenizer_info_ptr).CompileGrammar(Grammar::FromEBNF(ebnf))
         );
         return compiled_grammar_ptr;
-    } catch (...) {
+    } catch (const std::exception& e) {
+        catch_error(e.what());
         return nullptr;
     }
 }
@@ -32,7 +34,8 @@ extern "C" void* compile_regex_grammar(
             GrammarCompiler(tokenizer_info_ptr).CompileRegex(regex)
         );
         return compiled_grammar_ptr;
-    } catch (...) {
+    } catch (const std::exception& e) {
+        catch_error(e.what());
         return nullptr;
     }
 }
@@ -51,7 +54,8 @@ extern "C" void* compile_json_schema_grammar(
             GrammarCompiler(tokenizer_info_ptr).CompileJSONSchema(schema, false, opt_indent, std::nullopt, true, std::nullopt)
         );
         return compiled_grammar_ptr;
-    } catch (...) {
+    } catch (const std::exception& e) {
+        catch_error(e.what());
         return nullptr;
     }
 }

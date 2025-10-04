@@ -40,7 +40,7 @@ private struct PerformanceRecord: Codable {
         kvHeads: 8
     ))
 
-    let grammar = try Grammar.schema(generable: PerformanceRecord.self)
+    let grammar = try Grammar.generable(PerformanceRecord.self)
     let grammarMatcher = try XGrammar(vocab: vocab, vocabType: 0, stopTokenIds: [0], grammar: grammar)
     let processor = GrammarMaskedLogitProcessor(grammarMatcher: grammarMatcher)
     let sampler = ArgMaxSampler()

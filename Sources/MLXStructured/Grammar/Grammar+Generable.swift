@@ -17,12 +17,7 @@ public extension Grammar {
     static func schema<Content: Generable>(generable type: Content.Type, indent: Int? = nil) throws -> Grammar {
         let encoder = JSONEncoder()
         let data = try encoder.encode(type.generationSchema)
-        guard let string = String(data: data, encoding: .utf8) else {
-            throw EncodingError.invalidValue(
-                type,
-                EncodingError.Context(codingPath: [], debugDescription: "Failed to encode generation schema using UTF-8.")
-            )
-        }
+        let string = String(decoding: data, as: UTF8.self)
         return .schema(string, indent: indent)
     }
 }

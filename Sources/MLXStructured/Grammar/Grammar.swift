@@ -12,19 +12,12 @@ public enum Grammar {
     case ebnf(String)
     case regex(String)
     case schema(String, indent: Int? = nil)
-}
-
-public extension Grammar {
-    static func schema(_ schema: JSONSchema = .object(), indent: Int? = nil) throws -> Grammar {
-        let encoder = JSONEncoder()
-        let data = try encoder.encode(schema)
-        let string = String(decoding: data, as: UTF8.self)
-        return .schema(string, indent: indent)
-    }
+    case structural(String)
 }
 
 public extension Grammar {
     
+    @available(*, deprecated, message: "Prefer constructing prompt manually, this property will be removed in the future versions")
     var raw: String {
         switch self {
         case .ebnf(let ebnf):
@@ -33,9 +26,12 @@ public extension Grammar {
             return regex
         case .schema(let schema, _):
             return schema
+        case .structural(let tag):
+            return tag
         }
     }
     
+    @available(*, deprecated, message: "Prefer constructing prompt manually, this property will be removed in the future versions")
     var guidance: String? {
         switch self {
         case .ebnf:
@@ -44,6 +40,8 @@ public extension Grammar {
             return "Output is regex constrained: \(regex)"
         case .schema(let schema, _):
             return "Output is JSON schema constrained: \(schema)"
+        case .structural:
+            return nil
         }
     }
 }

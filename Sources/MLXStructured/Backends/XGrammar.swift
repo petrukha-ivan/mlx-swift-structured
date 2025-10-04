@@ -97,6 +97,10 @@ final class XGrammar {
             schema.utf8CString.withUnsafeBufferPointer {
                 compile_json_schema_grammar(tokenizerInfo, $0.baseAddress, $0.count, Int32(indent ?? -1))
             }
+        case .structural(let tag):
+            tag.utf8CString.withUnsafeBufferPointer {
+                compile_structural_tag(tokenizerInfo, $0.baseAddress, $0.count)
+            }
         }
         
         defer {

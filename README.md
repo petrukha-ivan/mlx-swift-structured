@@ -8,7 +8,7 @@ To use MLX Structured in your project, add the following to your `Package.swift`
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/petrukha-ivan/mlx-swift-structured", from: "0.0.1")
+    .package(url: "https://github.com/petrukha-ivan/mlx-swift-structured", from: "0.0.2")
 ]
 ```
 
@@ -27,7 +27,7 @@ dependencies: [
 Start by defining a `Grammar`. You can use JSON Schema to describe the desired output:
 
 ```swift
-let grammar = try Grammar.schema(.object(
+let schema = JSONSchema.object(
     description: "Person info",
     properties: [
         "name": .string(),
@@ -36,7 +36,9 @@ let grammar = try Grammar.schema(.object(
         "name",
         "age"
     ]
-))
+)
+
+let grammar = try Grammar.schema(schema)
 ```
 
 Starting with macOS 26 and iOS 26, you can use a `@Generable` type as a grammar source:
@@ -52,24 +54,87 @@ struct PersonInfo {
     let age: Int
 }
 
-let grammar = try Grammar.schema(generable: PersonInfo.self)
+let grammar = try Grammar.generable(PersonInfo.self)
 ```
 
-You can also use regex:
+You can also use a regex:
 
 ```swift
-let grammar = Grammar.regex(#"^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$"#) // Simple email regex
+let regex = #"^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$"# // Simple email regex
+let grammar = Grammar.regex(regex)
 ```
 
 Or define your own grammar rules with [EBNF](https://en.wikipedia.org/wiki/Extended_Backus–Naur_form) syntax:
 
 ```swift
-let grammar = Grammar.ebnf(#"root ::= ("YES" | "NO")"#) // Answer only "YES" or "NO"
+let ebnf = #"root ::= ("YES" | "NO")"# // Answer only "YES" or "NO"
+let grammar = Grammar.ebnf(ebnf)
+```
+
+### Complex Grammar
+
+You can define rich, composable grammar rules via a grammar builder. This enables you to describe structured output formats precisely:
+
+```swift
+let grammar = try Grammar {
+    SequenceFormat {
+        ConstTextFormat(text: "Hello!")
+        OrFormat {
+            JSONSchemaFormat(...)
+            RegexFormat(...)
+        }
+    }
+}
+```
+
+This can be used in different ways. Here is an example of a constrained Qwen3 tool-calling format:
+
+```swift
+let grammar = try Grammar {
+    SequenceFormat {
+        if forceThinking {
+            TagFormat(begin: "<think>", end: "</think>") {
+                AnyTextFormat()
+            }
+        }
+        TriggeredTagsFormat(triggers: ["<tool_call>"], options: [.atLeastOne, .stopAfterFirst]) {
+            for tool in tools {
+                TagFormat(begin: "<tool_call>\n{\"name\": \"\(tool.name)\", \"arguments\": ", end: "}\n</tool_call>") {
+                    JSONSchemaFormat(schema: tool.parameters)
+                }
+            }
+        }
+    }
+}
 ```
 
 ### Generation
 
-To use a defined grammar during text generation, create a logit processor and pass it to `TokenIterator`:
+To use a defined grammar during text generation, use the convenient `generate` method:
+
+```swift
+let result = try await generate(input: input, context: context, grammar: grammar)
+print(result.output) // Generated text
+```
+
+You can also pass a `Generable` type as an argument to generate it:
+
+```swift
+let (result, model) = try await generate(input: input, context: context, generating: PersonInfo.self)
+print(result.output) // Generated text
+print(model) // Generated model
+```
+
+With a `Generable` type, you can use streaming generation, which returns `PartiallyGenerated` content for your type:
+
+```swift
+let stream = try await generate(input: input, context: context, generating: PersonInfo.self)
+for await content in stream {
+    print("Partially generated:", content)
+}
+```
+
+You can also create a logit processor manually and pass it to `TokenIterator`:
 
 ```swift
 let processor = try await GrammarMaskedLogitProcessor.from(configuration: context.configuration, grammar: grammar)
@@ -82,7 +147,7 @@ You can find more usage examples in the `MLXStructuredCLI` target and in the uni
 
 ### Performance
 
-In synthetic tests with the Llama model and a vocabulary of 60,000 tokens, the performance drop was less than 10%. However, with real models the results are worse. In practice, you can expect generation speed to be about 15% slower.
+In synthetic tests with the Llama model and a vocabulary of 60,000 tokens, the performance drop was less than 10%. However, with real models, the results are worse. In practice, you can expect generation speed to be about 15% slower.
 The exact slowdown depends on the model, vocabulary size, and the complexity of your grammar.
 
 | Model | Vocab Size | Plain (tokens/s) | Constrained (tokens/s) |
@@ -109,10 +174,10 @@ let grammar = try Grammar.schema(.object(
     description: "Movie record",
     properties: [
         "title": .string(),
-        "year": .integer(),
+        "year": .integer(minimum: 1900, maximum: 2026),
         "genres": .array(items: .string(), maxItems: 3),
         "director": .string(),
-        "actors": .array(items: .string(), maxItems: 10)
+        "actors": .array(items: .string(), maxItems: 5)
     ], required: [
         "title",
         "year",
@@ -123,7 +188,7 @@ let grammar = try Grammar.schema(.object(
 ))
 ```
 
-For large proprietary models like ChatGPT, this is not a problem. With the right prompt, they can successfully generate valid JSON even without constrained decoding. But with smaller models like Gemma3 270M (especially when quantized to 4-bit) the output almost always contains invalid JSON, even if the schema is provided in the prompt.
+For large proprietary models like ChatGPT, this is not a problem. With the right prompt, they can successfully generate valid JSON even without constrained decoding. However, with smaller models like Gemma3 270M (especially when quantized to 4-bit), the output almost always contains invalid JSON, even if the schema is provided in the prompt.
 
 ```plain
 [
@@ -156,23 +221,22 @@ Here is the output using constrained decoding:
 
 ```plain
 {
-  "director": "Christian Bale",
-  "year": 2008,
   "title": "The Dark Knight",
+  "year": 2008,
+  "genres": [
+    "superhero",
+    "crime"
+  ],
+  "director": "Christopher Nolan",
   "actors": [
     "Christian Bale",
     "Heath Ledger",
     "Michael Caine"
-  ],
-  "genres": [
-    "crime",
-    "action",
-    "mystery"
   ]
 }
 ```
 
-The order of keys here is random because `Dictionary` in Swift is unordered. I plan to address this in the future. However, the output is fully valid JSON that exactly matches the provided schema. This shows that, with the right approach, even small models like Gemma3 270M 4-bit (which is just 150 MB) can produce correct structured output.
+The output is fully valid JSON that exactly matches the provided schema. This shows that, with the right approach, even small models like Gemma3 270M 4-bit (which is just 150 MB) can produce correct structured output.
 
 ## Troubleshooting
 

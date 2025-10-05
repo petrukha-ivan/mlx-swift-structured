@@ -26,7 +26,7 @@ struct StructuralExample: AsyncParsableCommand {
         let grammar = try Grammar {
             SequenceFormat {
                 if includePrefix {
-                    ConstTextFormat(text: "According to my knowledge, my answer is ")
+                    ConstTextFormat(text: "Based on the data I was trained on, the answer is ")
                 }
                 OrFormat {
                     ConstTextFormat(text: "YES")

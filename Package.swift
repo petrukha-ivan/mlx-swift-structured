@@ -13,7 +13,7 @@ let package = Package(
         .package(url: "https://github.com/ml-explore/mlx-swift", from: "0.25.6"),
         .package(url: "https://github.com/ml-explore/mlx-swift-examples", from: "2.25.7"),
         .package(url: "https://github.com/huggingface/swift-transformers", from: "0.1.24"),
-        .package(url: "https://github.com/kevinhermawan/swift-json-schema", from: "2.0.1"),
+        .package(url: "https://github.com/petrukha-ivan/swift-json-schema", from: "2.0.2"),
         .package(url: "https://github.com/apple/swift-argument-parser", from: "1.4.0"),
     ],
     targets: [

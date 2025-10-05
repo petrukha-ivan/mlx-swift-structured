@@ -10,9 +10,8 @@ import JSONSchema
 
 public extension Grammar {
     static func schema(_ schema: JSONSchema = .object(), indent: Int? = nil) throws -> Grammar {
-        let encoder = JSONEncoder()
-        let data = try encoder.encode(schema)
-        let string = String(decoding: data, as: UTF8.self)
+        let data = try JSONEncoder.sorted.encode(schema)
+        let string = String(decoding: data, as: UTF8.self).sanitizedSchema
         return .schema(string, indent: indent)
     }
 }

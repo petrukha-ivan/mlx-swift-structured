@@ -1,5 +1,5 @@
 {
-  "originHash" : "88a5b14fe80c381a1d804e5b5640807c689738428df31aa926dd90d63ec57bda",
+  "originHash" : "260d8cbbc595d720c646ccd42ac1fffd603299189c30eb43c7e33be68ea8665b",
   "pins" : [
     {
       "identity" : "gzipswift",
@@ -51,17 +51,17 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/apple/swift-collections.git",
       "state" : {
-        "revision" : "8c0c0a8b49e080e54e5e328cc552821ff07cd341",
-        "version" : "1.2.1"
+        "revision" : "7b847a3b7008b2dc2f47ca3110d8c782fb2e5c7e",
+        "version" : "1.3.0"
       }
     },
     {
       "identity" : "swift-json-schema",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/kevinhermawan/swift-json-schema.git",
+      "location" : "https://github.com/petrukha-ivan/swift-json-schema",
       "state" : {
-        "revision" : "4a9284e44d8ef2bfc863734e9ff535909ae6b27a",
-        "version" : "2.0.1"
+        "revision" : "5d5b410ec67629586255dcb148f98362f6ef4629",
+        "version" : "2.0.2"
       }
     },
     {

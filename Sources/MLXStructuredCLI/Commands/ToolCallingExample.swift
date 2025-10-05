@@ -24,7 +24,7 @@ private extension Tool {
             "function": [
                 "name": name,
                 "description": description,
-                "parameters": try! JSONSerialization.jsonObject(with: JSONEncoder().encode(getCurrentTimeTool.parameters))
+                "parameters": try! JSONSerialization.jsonObject(with: JSONEncoder().encode(parameters))
             ]
         ]
     }

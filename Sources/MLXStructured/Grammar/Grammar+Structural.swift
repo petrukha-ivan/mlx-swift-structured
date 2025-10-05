@@ -10,9 +10,8 @@ import Foundation
 public extension Grammar {
     init(@FormatBuilder _ content: () -> Encodable) throws {
         let tag = StructuralTag(format: content())
-        let encoder = JSONEncoder()
-        let data = try encoder.encode(tag)
-        let string = String(decoding: data, as: UTF8.self)
+        let data = try JSONEncoder.sorted.encode(tag)
+        let string = String(decoding: data, as: UTF8.self).sanitizedSchema
         self = Grammar.structural(string)
     }
 }

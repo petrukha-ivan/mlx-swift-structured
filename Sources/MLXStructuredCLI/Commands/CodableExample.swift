@@ -61,7 +61,7 @@ struct CodableExample: AsyncParsableCommand {
         let context = try await model.modelContext()
         let prompt = MovieRecord.instruction + "\n" + MovieRecord.sample
         let input = try await context.processor.prepare(input: UserInput(prompt: prompt))
-        let (result, model) = try await MLXStructured.generate(input: input, context: context, schema: MovieRecord.schema, generating: MovieRecord.self)
+        let (result, model) = try await MLXStructured.generate(input: input, context: context, schema: MovieRecord.schema, generating: MovieRecord.self, indent: 2)
         print("Generation result:", result.output)
         print("Generated model:", model)
     }

@@ -34,9 +34,10 @@ public func generate<Content: Decodable>(
     context: ModelContext,
     schema: JSONSchema,
     generating: Content.Type,
+    indent: Int? = nil,
     didGenerate: ([Int]) -> GenerateDisposition = { _ in .more }
 ) async throws -> (GenerateResult, Content) {
-    let grammar = try Grammar.schema(schema)
+    let grammar = try Grammar.schema(schema, indent: indent)
     let sampler = parameters.sampler()
     let processor = try await GrammarMaskedLogitProcessor.from(configuration: context.configuration, grammar: grammar)
     let iterator = try TokenIterator(input: input, model: context.model, processor: processor, sampler: sampler)
@@ -52,10 +53,11 @@ public func generate<Content: Generable>(
     parameters: GenerateParameters = GenerateParameters(),
     context: ModelContext,
     generating: Content.Type,
+    indent: Int? = nil,
     didGenerate: ([Int]) -> GenerateDisposition = { _ in .more }
 ) async throws -> (GenerateResult, Content) {
     let sampler = parameters.sampler()
-    let grammar = try Grammar.generable(Content.self)
+    let grammar = try Grammar.generable(Content.self, indent: indent)
     let processor = try await GrammarMaskedLogitProcessor.from(configuration: context.configuration, grammar: grammar)
     let iterator = try TokenIterator(input: input, model: context.model, processor: processor, sampler: sampler)
     let result = generate(input: input, context: context, iterator: iterator, didGenerate: didGenerate)
@@ -68,10 +70,11 @@ public func generate<Content: Generable>(
     input: LMInput,
     parameters: GenerateParameters = GenerateParameters(),
     context: ModelContext,
-    generating: Content.Type
+    generating: Content.Type,
+    indent: Int? = nil
 ) async throws -> AsyncStream<Content.PartiallyGenerated> {
     let sampler = parameters.sampler()
-    let grammar = try Grammar.generable(Content.self)
+    let grammar = try Grammar.generable(Content.self, indent: indent)
     let processor = try await GrammarMaskedLogitProcessor.from(configuration: context.configuration, grammar: grammar)
     let iterator = try TokenIterator(input: input, model: context.model, processor: processor, sampler: sampler)
     let stream = generate(input: input, context: context, iterator: iterator)

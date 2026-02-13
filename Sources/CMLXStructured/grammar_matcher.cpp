@@ -49,6 +49,16 @@ extern "C" void grammar_matcher_reset(void* grammar_matcher) {
         grammar_matcher_ptr->Reset();
     } catch (const std::exception& e) {
         catch_error(e.what());
+        return;
+    }
+}
+
+extern "C" bool grammar_matcher_is_terminated(void* grammar_matcher) {
+    try {
+        auto* grammar_matcher_ptr = static_cast<GrammarMatcher*>(grammar_matcher);
+        return grammar_matcher_ptr->IsTerminated();
+    } catch (const std::exception& e) {
+        catch_error(e.what());
         return false;
     }
 }

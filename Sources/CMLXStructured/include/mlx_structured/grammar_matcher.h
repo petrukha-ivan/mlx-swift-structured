@@ -22,6 +22,8 @@ bool grammar_matcher_accept_token(
 
 void grammar_matcher_reset(void* grammar_matcher);
 
+bool grammar_matcher_is_terminated(void* grammar_matcher);
+
 void grammar_matcher_free(void* grammar_matcher);
 
 #ifdef __cplusplus

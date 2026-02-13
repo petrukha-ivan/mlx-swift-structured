@@ -164,6 +164,10 @@ extension XGrammar: GrammarMatcher {
     func reset() {
         grammar_matcher_reset(grammarMatcher)
     }
+
+    func isTerminated() -> Bool {
+        return grammar_matcher_is_terminated(grammarMatcher)
+    }
 }
 
 private extension DLTensor {

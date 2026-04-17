@@ -17,6 +17,15 @@ public final class GrammarMaskedLogitProcessor: LogitProcessor, @unchecked Senda
         self.grammarMatcher = grammarMatcher
     }
 
+    /// Whether the underlying grammar matcher has reached an accept state.
+    ///
+    /// Downstream callers can use this to end generation streams early once
+    /// the grammar's terminal state is reached, without peeking at the
+    /// internal matcher.
+    public var isTerminated: Bool {
+        grammarMatcher.isTerminated()
+    }
+
     public func prompt(_ prompt: MLXArray) {
         pendingToken = nil
         grammarMatcher.reset()

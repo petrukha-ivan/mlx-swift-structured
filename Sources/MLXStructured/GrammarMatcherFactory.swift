@@ -36,8 +36,22 @@ extension GrammarMaskedLogitProcessor {
 extension ModelConfiguration: @retroactive Hashable {
     public func hash(into hasher: inout Hasher) {
         hasher.combine(id)
-        hasher.combine(tokenizerId)
-        hasher.combine(overrideTokenizer)
+        // mlx-swift-lm 3.x replaced `tokenizerId` and `overrideTokenizer`
+        // with the unified `tokenizerSource: TokenizerSource?`. TokenizerSource
+        // is `Equatable` but not `Hashable`, so hash its cases manually.
+        if let tokenizerSource {
+            switch tokenizerSource {
+            case .id(let id, let revision):
+                hasher.combine(0)
+                hasher.combine(id)
+                hasher.combine(revision)
+            case .directory(let directory):
+                hasher.combine(1)
+                hasher.combine(directory.path)
+            }
+        } else {
+            hasher.combine(2)
+        }
         hasher.combine(defaultPrompt)
         hasher.combine(extraEOSTokens)
         hasher.combine(eosTokenIds)

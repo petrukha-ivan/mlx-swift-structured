@@ -13,6 +13,29 @@ import MLX
 
 struct PerformanceTests {
 
+    @Test func `JSON schema with repetition compiles within seconds`() throws {
+        let vocab = ["<eos>"] + (0...0xFFFF).compactMap({ UnicodeScalar($0).map(String.init) })
+        let grammar = try Grammar.schema(
+            .object(
+                properties: [
+                    "items": .array(
+                        items: .string(maxLength: 512),
+                        maxItems: 48
+                    ),
+                ],
+                required: ["items"]
+            )
+        )
+
+        let clock = ContinuousClock()
+        let start = clock.now
+        let _ = try XGrammar(vocab: vocab, vocabType: 0, stopTokenIds: [0], grammar: grammar)
+        let duration = clock.now - start
+
+        print("Repetition schema compilation duration: \(duration)")
+        #expect(duration < .seconds(30), "Schema with maxItems:48 and maxLength:512 should compile in under 30s, took \(duration)")
+    }
+
     @Test func `Constrained decoding slowdown stays below threshold`() async throws {
         let vocab = ["<eos>"] + (0...0xFFFF).compactMap({ UnicodeScalar($0).map(String.init) })
         let model = LlamaModel(

@@ -6,10 +6,13 @@
 //
 
 import ArgumentParser
+import Foundation
 import MLXLMCommon
 import MLXLLM
 import MLXVLM
-import Hub
+import MLXHuggingFace
+import HuggingFace
+import Tokenizers
 
 @main
 struct RootCommand: AsyncParsableCommand {
@@ -41,10 +44,9 @@ struct ModelArguments: ParsableArguments {
     var vlm: Bool = false
 
     func modelContext() async throws -> ModelContext {
-        let hub = HubApi(useOfflineMode: false)
         let configuration = ModelConfiguration(id: id, revision: revision, extraEOSTokens: ["<end_of_turn>", "<|end|>"])
-        let factory: ModelFactory = vlm ? VLMModelFactory.shared : LLMModelFactory.shared
-        return try await factory.load(hub: hub, configuration: configuration) { progress in
+        let factory: any ModelFactory = vlm ? VLMModelFactory.shared : LLMModelFactory.shared
+        return try await factory.load(from: #hubDownloader(), using: #huggingFaceTokenizerLoader(), configuration: configuration) { progress in
             print("Loading model: \(progress.fractionCompleted.formatted(.percent))")
         }
     }

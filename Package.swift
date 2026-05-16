@@ -1,4 +1,4 @@
-// swift-tools-version: 6.1
+// swift-tools-version: 6.2
 // The swift-tools-version declares the minimum version of Swift required to build this package.
 
 import PackageDescription
@@ -26,13 +26,13 @@ let package = Package(
                 "xgrammar/3rdparty/googletest",
                 "xgrammar/3rdparty/dlpack/contrib",
                 "xgrammar/3rdparty/picojson",
-                "xgrammar/cpp/nanobind",
+                "xgrammar/cpp/tvm_ffi",
             ],
             cxxSettings: [
                 .headerSearchPath("xgrammar/include"),
                 .headerSearchPath("xgrammar/3rdparty/dlpack/include"),
                 .headerSearchPath("xgrammar/3rdparty/picojson"),
-                .unsafeFlags(["-w"]),
+                .disableWarning("shorten-64-to-32"),
             ]
         ),
         // Main package

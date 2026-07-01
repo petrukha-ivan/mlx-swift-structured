@@ -23,6 +23,8 @@ public final class GrammarMaskedLogitProcessor: LogitProcessor, @unchecked Senda
     }
 
     public func process(logits: MLXArray) -> MLXArray {
+        asyncEval(logits)
+
         if let token = pendingToken {
             pendingToken = nil
             grammarMatcher.advance(token: token)

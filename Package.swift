@@ -27,6 +27,7 @@ let package = Package(
                 "xgrammar/3rdparty/dlpack/contrib",
                 "xgrammar/3rdparty/picojson",
                 "xgrammar/cpp/tvm_ffi",
+                "xgrammar/Package.swift",
             ],
             cxxSettings: [
                 .headerSearchPath("xgrammar/include"),

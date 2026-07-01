@@ -8,8 +8,8 @@ let package = Package(
     platforms: [.macOS(.v14), .iOS(.v17)],
     products: [.library(name: "MLXStructured", targets: ["MLXStructured"])],
     dependencies: [
-        .package(url: "https://github.com/ml-explore/mlx-swift", from: "0.31.3"),
-        .package(url: "https://github.com/ml-explore/mlx-swift-lm", from: "3.31.3"),
+        .package(url: "https://github.com/ml-explore/mlx-swift", from: "0.31.5"),
+        .package(url: "https://github.com/ml-explore/mlx-swift-lm", from: "3.31.4"),
         .package(url: "https://github.com/huggingface/swift-transformers", from: "1.1.6"),
         .package(url: "https://github.com/petrukha-ivan/swift-json-schema", from: "2.0.2"),
         .package(url: "https://github.com/apple/swift-async-algorithms", from: "1.1.3"),

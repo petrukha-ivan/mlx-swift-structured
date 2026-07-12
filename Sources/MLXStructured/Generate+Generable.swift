@@ -48,6 +48,7 @@
     ///   - input: language model input.
     ///   - cache: optional KV cache to continue generation from a previous state.
     ///   - parameters: configuration options for token generation.
+    ///   - options: constrained generation options.
     ///   - context: model context containing the model, tokenizer, and configuration.
     ///   - generating: `Generable` type to produce.
     /// - Returns: the generated structured value.
@@ -55,6 +56,7 @@
         input: LMInput,
         cache: [KVCache]? = nil,
         parameters: GenerateParameters = GenerateParameters(),
+        options: ConstrainedGenerationOptions = [],
         context: ModelContext,
         generating: Content.Type
     ) async throws -> Content {
@@ -63,6 +65,7 @@
             input: input,
             cache: cache,
             parameters: parameters,
+            options: options,
             context: context,
             grammar: grammar
         )
@@ -105,6 +108,7 @@
     ///   - input: language model input.
     ///   - cache: optional KV cache to continue generation from a previous state.
     ///   - parameters: configuration options for token generation.
+    ///   - options: constrained generation options.
     ///   - context: model context containing the model, tokenizer, and configuration.
     ///   - partially: `Generable` type whose partial representation should be streamed.
     /// - Returns: an async sequence of partial structured updates.
@@ -112,14 +116,16 @@
         input: LMInput,
         cache: [KVCache]? = nil,
         parameters: GenerateParameters = GenerateParameters(),
+        options: ConstrainedGenerationOptions = [],
         context: ModelContext,
-        partially: Content.Type,
+        partially: Content.Type
     ) async throws -> some AsyncSequence<Content.PartiallyGenerated, any Error> {
         let grammar = try Grammar.generable(Content.self)
         let stream = try await generate(
             input: input,
             cache: cache,
             parameters: parameters,
+            options: options,
             context: context,
             grammar: grammar
         )

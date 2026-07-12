@@ -11,13 +11,13 @@ import JSONSchema
 public extension Grammar {
 
     static func schema(_ schema: JSONSchema = .object(), indent: Int) throws -> Grammar {
-        try Grammar.schema(schema, options: JSONSchemaFormatOptions(whitespace: .indent(indent)))
+        try Grammar.schema(schema, format: JSONSchemaFormatOptions(whitespace: .indent(indent)))
     }
 
-    static func schema(_ schema: JSONSchema = .object(), options: JSONSchemaFormatOptions = .init()) throws -> Grammar {
+    static func schema(_ schema: JSONSchema = .object(), format: JSONSchemaFormatOptions = .init()) throws -> Grammar {
         let data = try JSONEncoder.sorted.encode(schema)
         let string = String(decoding: data, as: UTF8.self).sanitizedSchema
-        return .schema(string, options: options)
+        return .schema(string, format: format)
     }
 }
 

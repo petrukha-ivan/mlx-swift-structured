@@ -13,6 +13,7 @@ let package = Package(
         .package(url: "https://github.com/huggingface/swift-transformers", from: "1.1.6"),
         .package(url: "https://github.com/petrukha-ivan/swift-json-schema", from: "2.0.2"),
         .package(url: "https://github.com/apple/swift-async-algorithms", from: "1.1.3"),
+        .package(url: "https://github.com/apple/swift-collections", from: "1.3.0"),
         .package(url: "https://github.com/apple/swift-argument-parser", from: "1.4.0"),
     ],
     targets: [
@@ -46,6 +47,7 @@ let package = Package(
                 .product(name: "Hub", package: "swift-transformers"),
                 .product(name: "JSONSchema", package: "swift-json-schema"),
                 .product(name: "AsyncAlgorithms", package: "swift-async-algorithms"),
+                .product(name: "Collections", package: "swift-collections"),
             ]
         ),
         // CLI for testing

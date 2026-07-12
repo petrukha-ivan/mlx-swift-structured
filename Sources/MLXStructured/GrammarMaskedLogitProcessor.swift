@@ -8,7 +8,7 @@
 import MLXLMCommon
 import MLX
 
-public final class GrammarMaskedLogitProcessor: LogitProcessor, @unchecked Sendable {
+public class GrammarMaskedLogitProcessor: LogitProcessor, @unchecked Sendable {
 
     let grammarMatcher: GrammarMatcher
     var pendingToken: MLXArray?
@@ -51,5 +51,12 @@ public final class GrammarMaskedLogitProcessor: LogitProcessor, @unchecked Senda
         if !grammarMatcher.isTerminated() {
             pendingToken = token
         }
+    }
+}
+
+public class EagerGrammarMaskedLogitProcessor: GrammarMaskedLogitProcessor, @unchecked Sendable {
+
+    public override func didSample(token: MLXArray) {
+        grammarMatcher.accept(token: token)
     }
 }

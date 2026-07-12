@@ -9,6 +9,21 @@ import Foundation
 import JSONSchema
 import MLXLMCommon
 
+/// Options that control constrained generation behavior.
+public struct ConstrainedGenerationOptions: OptionSet, Sendable {
+
+    /// The raw bitmask value.
+    public let rawValue: Int
+
+    /// Creates options from a raw bitmask value.
+    public init(rawValue: Int) {
+        self.rawValue = rawValue
+    }
+
+    /// Skips model evaluation for deterministic grammar fragments.
+    public static let jumpForwarding = ConstrainedGenerationOptions(rawValue: 1 << 0)
+}
+
 /// Generates text constrained by an EBNF grammar.
 ///
 /// Use this when you already have an EBNF grammar string and want to stream
@@ -30,6 +45,7 @@ import MLXLMCommon
 ///   - input: language model input.
 ///   - cache: optional KV cache to continue generation from a previous state.
 ///   - parameters: configuration options for token generation.
+///   - options: constrained generation options.
 ///   - context: model context containing the model, tokenizer, and configuration.
 ///   - ebnf: grammar in Extended Backus-Naur Form.
 /// - Returns: an async stream of constrained generation updates.
@@ -37,14 +53,16 @@ public func generate(
     input: LMInput,
     cache: [KVCache]? = nil,
     parameters: GenerateParameters = GenerateParameters(),
+    options: ConstrainedGenerationOptions = [],
     context: ModelContext,
-    ebnf: String,
+    ebnf: String
 ) async throws -> AsyncStream<Generation> {
     let grammar = Grammar.ebnf(ebnf)
     return try await generate(
         input: input,
         cache: cache,
         parameters: parameters,
+        options: options,
         context: context,
         grammar: grammar
     )
@@ -68,6 +86,7 @@ public func generate(
 ///   - input: language model input.
 ///   - cache: optional KV cache to continue generation from a previous state.
 ///   - parameters: configuration options for token generation.
+///   - options: constrained generation options.
 ///   - context: model context containing the model, tokenizer, and configuration.
 ///   - regex: regular expression describing valid output.
 /// - Returns: an async stream of constrained generation updates.
@@ -75,14 +94,16 @@ public func generate(
     input: LMInput,
     cache: [KVCache]? = nil,
     parameters: GenerateParameters = GenerateParameters(),
+    options: ConstrainedGenerationOptions = [],
     context: ModelContext,
-    regex: String,
+    regex: String
 ) async throws -> AsyncStream<Generation> {
     let grammar = Grammar.regex(regex)
     return try await generate(
         input: input,
         cache: cache,
         parameters: parameters,
+        options: options,
         context: context,
         grammar: grammar
     )
@@ -122,23 +143,26 @@ public func generate(
 ///   - input: language model input.
 ///   - cache: optional KV cache to continue generation from a previous state.
 ///   - parameters: configuration options for token generation.
+///   - options: constrained generation options.
 ///   - context: model context containing the model, tokenizer, and configuration.
 ///   - schema: JSON schema that defines the allowed output structure.
-///   - options: formatting options used when converting the schema to a grammar.
+///   - format: formatting options used when converting the schema to a grammar.
 /// - Returns: an async stream of constrained generation updates.
 public func generate(
     input: LMInput,
     cache: [KVCache]? = nil,
     parameters: GenerateParameters = .init(),
+    options: ConstrainedGenerationOptions = [],
     context: ModelContext,
     schema: JSONSchema,
-    options: JSONSchemaFormatOptions = .init(),
+    format: JSONSchemaFormatOptions = .init()
 ) async throws -> AsyncStream<Generation> {
-    let grammar = try Grammar.schema(schema, options: options)
+    let grammar = try Grammar.schema(schema, format: format)
     return try await generate(
         input: input,
         cache: cache,
         parameters: parameters,
+        options: options,
         context: context,
         grammar: grammar
     )
@@ -185,9 +209,10 @@ public func generate(
 ///   - input: language model input.
 ///   - cache: optional KV cache to continue generation from a previous state.
 ///   - parameters: configuration options for token generation.
+///   - options: constrained generation options.
 ///   - context: model context containing the model, tokenizer, and configuration.
 ///   - schema: JSON schema that defines the allowed output structure.
-///   - options: formatting options used when converting the schema to a grammar.
+///   - format: formatting options used when converting the schema to a grammar.
 ///   - generating: decoded result type.
 ///   - decoder: decoder used to convert the generated JSON into `Content`.
 /// - Returns: the decoded generated value.
@@ -195,17 +220,19 @@ public func generate<Content: Decodable>(
     input: LMInput,
     cache: [KVCache]? = nil,
     parameters: GenerateParameters = .init(),
+    options: ConstrainedGenerationOptions = [],
     context: ModelContext,
     schema: JSONSchema,
-    options: JSONSchemaFormatOptions = .init(),
+    format: JSONSchemaFormatOptions = .init(),
     generating: Content.Type,
     decoder: JSONDecoder = .init()
 ) async throws -> Content {
-    let grammar = try Grammar.schema(schema, options: options)
+    let grammar = try Grammar.schema(schema, format: format)
     let stream = try await generate(
         input: input,
         cache: cache,
         parameters: parameters,
+        options: options,
         context: context,
         grammar: grammar
     )
@@ -224,6 +251,7 @@ public func generate<Content: Decodable>(
 ///   - input: language model input.
 ///   - cache: optional KV cache to continue generation from a previous state.
 ///   - parameters: configuration options for token generation.
+///   - options: constrained generation options.
 ///   - context: model context containing the model, tokenizer, and configuration.
 ///   - grammar: prepared grammar used to mask invalid tokens during sampling.
 /// - Returns: an async stream of constrained generation updates.
@@ -231,21 +259,34 @@ public func generate(
     input: LMInput,
     cache: [KVCache]? = nil,
     parameters: GenerateParameters = .init(),
+    options: ConstrainedGenerationOptions = [],
     context: ModelContext,
-    grammar: Grammar,
+    grammar: Grammar
 ) async throws -> AsyncStream<Generation> {
     let processor = try await GrammarMaskedLogitProcessor.from(
         configuration: context.configuration,
         grammar: grammar
     )
 
-    let iterator = try GrammarConstrainedTokenIterator(
-        input: input,
-        model: context.model,
-        cache: cache,
-        grammarMatcher: processor.grammarMatcher,
-        parameters: parameters
-    )
+    let iterator: any TokenIteratorProtocol =
+        if options.contains(.jumpForwarding) {
+            try GrammarConstrainedJumpForwardTokenIterator(
+                input: input,
+                model: context.model,
+                cache: cache,
+                tokenizer: context.tokenizer,
+                grammarMatcher: processor.grammarMatcher,
+                parameters: parameters
+            )
+        } else {
+            try GrammarConstrainedTokenIterator(
+                input: input,
+                model: context.model,
+                cache: cache,
+                grammarMatcher: processor.grammarMatcher,
+                parameters: parameters
+            )
+        }
 
     let (stream, _) = generateTask(
         promptTokenCount: input.text.tokens.size,

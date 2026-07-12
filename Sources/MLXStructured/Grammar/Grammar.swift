@@ -11,6 +11,6 @@ import JSONSchema
 public enum Grammar {
     case ebnf(String)
     case regex(String)
-    case schema(String, options: JSONSchemaFormatOptions = .init())
+    case schema(String, format: JSONSchemaFormatOptions = .init())
     case structural(String)
 }

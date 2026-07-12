@@ -34,9 +34,9 @@ private extension MovieRecord {
         properties: [
             "title": .string(),
             "year": .integer(minimum: 1900, maximum: 2026),
-            "genres": .array(items: .string(), maxItems: 3),
+            "genres": .array(items: .string(), minItems: 1, maxItems: 3),
             "director": .string(),
-            "actors": .array(items: .string(), maxItems: 5),
+            "actors": .array(items: .string(), minItems: 1, maxItems: 5),
         ],
         required: [
             "title",
@@ -117,9 +117,9 @@ struct BenchmarkCommand: AsyncParsableCommand {
     func run() async throws {
         let context = try await model.modelContext()
         let prompt = MovieRecord.instruction + "\n" + MovieRecord.sample
-        let input = try await context.processor.prepare(input: UserInput(prompt: prompt))
+        let input = try await context.processor.prepare(input: UserInput(prompt: prompt, additionalContext: ["enable_thinking": false]))
         let parameters = GenerateParameters(
-            maxTokens: 69,  // Exact output JSON length with greedy decoding
+            maxTokens: 128,
             temperature: 0.0
         )
 
@@ -133,6 +133,12 @@ struct BenchmarkCommand: AsyncParsableCommand {
                 .unsafelyUnwrapped
         }
 
+        do {
+            let stream = try generate(input: input, parameters: parameters, context: context)
+            let output = await stream.reduce("", { $0 + ($1.chunk ?? "") })
+            print("Default output:", output)
+        }
+
         print("\nStarting benchmark with constrained generation...")
         try await benchmark(label: "Constrained") {
             let grammar = try Grammar.schema(MovieRecord.schema, indent: 2)
@@ -142,6 +148,31 @@ struct BenchmarkCommand: AsyncParsableCommand {
                 .compactMap(\.info)
                 .first { _ in true }
                 .unsafelyUnwrapped
+        }
+
+        do {
+            let grammar = try Grammar.schema(MovieRecord.schema, indent: 2)
+            let stream = try await generate(input: input, parameters: parameters, context: context, grammar: grammar)
+            let output = await stream.reduce("", { $0 + ($1.chunk ?? "") })
+            print("Constrained output:", output)
+        }
+
+        print("\nStarting benchmark with constrained generation and jump forwarding...")
+        try await benchmark(label: "Constrained with jump forwarding") {
+            let grammar = try Grammar.schema(MovieRecord.schema, indent: 2)
+            let stream = try await generate(input: input, parameters: parameters, options: .jumpForwarding, context: context, grammar: grammar)
+            return
+                await stream
+                .compactMap(\.info)
+                .first { _ in true }
+                .unsafelyUnwrapped
+        }
+
+        do {
+            let grammar = try Grammar.schema(MovieRecord.schema, indent: 2)
+            let stream = try await generate(input: input, parameters: parameters, options: .jumpForwarding, context: context, grammar: grammar)
+            let output = await stream.reduce("", { $0 + ($1.chunk ?? "") })
+            print("Constrained with jump forwarding output:", output)
         }
     }
 

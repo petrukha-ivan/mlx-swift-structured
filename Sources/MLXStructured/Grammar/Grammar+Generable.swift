@@ -28,7 +28,7 @@
             let schema = try JSONDecoder.withPropertiesOrderInfo(orderContainer.order).decode(JSONSchema.self, from: generationSchemaData)
             let schemaData = try JSONEncoder.sorted.encode(schema)
             let string = String(decoding: schemaData, as: UTF8.self).sanitizedSchema
-            return .schema(string, options: .init(whitespace: indent.map({ .indent($0) }) ?? .none))
+            return .schema(string, format: .init(whitespace: indent.map({ .indent($0) }) ?? .none))
         }
     }
 #endif

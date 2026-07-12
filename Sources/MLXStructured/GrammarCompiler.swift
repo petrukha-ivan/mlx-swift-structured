@@ -105,10 +105,10 @@ final class GrammarCompiler: @unchecked Sendable {
                 return regex.utf8CString.withUnsafeBufferPointer {
                     grammar_compiler_compile_regex(pointer, $0.baseAddress, $0.count - 1)
                 }
-            case .schema(let schema, let options):
+            case .schema(let schema, let format):
                 return schema.utf8CString.withUnsafeBufferPointer { schemaBuffer in
                     let (anyWhitespace, indent): (Int32, Int32) =
-                        switch options.whitespace {
+                        switch format.whitespace {
                         case .any: (1, -1)
                         case .none: (0, -1)
                         case .indent(let count): (0, Int32(count))
@@ -116,7 +116,7 @@ final class GrammarCompiler: @unchecked Sendable {
                     var compileOptions = json_schema_compile_options_t(
                         indent: indent,
                         any_whitespace: anyWhitespace,
-                        strict_mode: options.strict ? 1 : 0,
+                        strict_mode: format.strict ? 1 : 0,
                         max_whitespace_cnt: -1,
                         has_separators: 0,
                         separators: .init()

@@ -11,6 +11,35 @@ import MLX
 
 struct GrammarMatcherTests {
 
+    @Test func `EBNF grammar matcher finds and accepts jump forward string`() async throws {
+        let vocab = ["Y", "E", "S", "!", "?"]
+        let grammar = Grammar.ebnf(#"root ::= "YES" ("!" | "?")"#)
+        let grammarMatcher = try XGrammar(vocab: vocab, stopTokenIds: [], grammar: grammar)
+
+        #expect(grammarMatcher.findJumpForwardString() == "YES")
+        grammarMatcher.accept(string: "YES")
+
+        let mask = grammarMatcher.nextTokenMask()
+        let allowed = mask.exp().asArray(Int.self)
+        #expect(allowed == [0, 0, 0, 1, 1])
+    }
+
+    @Test func `EBNF grammar matcher respects accepted jump forward string`() async throws {
+        let vocab = ["Y", "E", "S", "!", "?"]
+        let grammar = Grammar.ebnf(#"root ::= "YES" ("!" | "?")"#)
+        let grammarMatcher = try XGrammar(vocab: vocab, stopTokenIds: [], grammar: grammar)
+
+        #expect(grammarMatcher.findJumpForwardString() == "YES")
+        grammarMatcher.accept(string: "YES")
+
+        let mask = grammarMatcher.nextTokenMask()
+        let allowed = mask.exp().asArray(Int.self)
+        #expect(allowed == [0, 0, 0, 1, 1])
+
+        grammarMatcher.accept(token: MLXArray(3))
+        #expect(grammarMatcher.findJumpForwardString() == "")
+    }
+
     @Test func `EBNF grammar matcher accepts YES sequence`() async throws {
         let vocab = ["Y", "E", "S", "N", "O"]
         let grammar = Grammar.ebnf(#"root ::= ("YES" | "NO")"#)
@@ -27,7 +56,7 @@ struct GrammarMatcherTests {
             let mask = grammarMatcher.nextTokenMask()
             let allowed = mask.exp().asArray(Int.self)
             #expect(allowed == expectation)
-            grammarMatcher.advance(token: MLXArray(advance))
+            grammarMatcher.accept(token: MLXArray(advance))
         }
     }
 
@@ -48,7 +77,7 @@ struct GrammarMatcherTests {
             let mask = grammarMatcher.nextTokenMask()
             let allowed = mask.exp().asArray(Int.self)
             #expect(allowed == expectation)
-            grammarMatcher.advance(token: MLXArray(advance))
+            grammarMatcher.accept(token: MLXArray(advance))
         }
     }
 
@@ -75,7 +104,7 @@ struct GrammarMatcherTests {
             let mask = grammarMatcher.nextTokenMask()
             let allowed = mask.exp().asArray(Int.self)
             #expect(allowed == expectation)
-            grammarMatcher.advance(token: MLXArray(advance))
+            grammarMatcher.accept(token: MLXArray(advance))
         }
     }
 
@@ -104,7 +133,7 @@ struct GrammarMatcherTests {
             let mask = grammarMatcher.nextTokenMask()
             let allowed = mask.exp().asArray(Int.self)
             #expect(allowed == expectation)
-            grammarMatcher.advance(token: MLXArray(advance))
+            grammarMatcher.accept(token: MLXArray(advance))
         }
     }
 
@@ -132,7 +161,7 @@ struct GrammarMatcherTests {
             let mask = grammarMatcher.nextTokenMask()
             let allowed = mask.exp().asArray(Int.self)
             #expect(allowed == expectation)
-            grammarMatcher.advance(token: MLXArray(advance))
+            grammarMatcher.accept(token: MLXArray(advance))
         }
     }
 }

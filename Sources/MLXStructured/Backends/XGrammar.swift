@@ -72,12 +72,29 @@ extension XGrammar: GrammarMatcher {
         return mask
     }
 
-    func advance(token: MLXArray) {
+    func accept(token: MLXArray) {
         let tokenID = token.item(Int32.self)
         let accepted = grammar_matcher_accept_token(grammarMatcher, tokenID)
         if !accepted {
             reset()
         }
+    }
+
+    func accept(string: String) {
+        _ = string.withCString { string in
+            grammar_matcher_accept_string(grammarMatcher, string)
+        }
+    }
+
+    func findJumpForwardString() -> String {
+        guard let string = grammar_matcher_find_jump_forward_string(grammarMatcher) else {
+            return ""
+        }
+        defer {
+            grammar_matcher_string_free(string)
+        }
+
+        return String(cString: string)
     }
 
     func reset() {

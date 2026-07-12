@@ -27,7 +27,7 @@ public final class GrammarMaskedLogitProcessor: LogitProcessor, @unchecked Senda
 
         if let token = pendingToken {
             pendingToken = nil
-            grammarMatcher.advance(token: token)
+            grammarMatcher.accept(token: token)
         }
 
         let mask = grammarMatcher.nextTokenMask()

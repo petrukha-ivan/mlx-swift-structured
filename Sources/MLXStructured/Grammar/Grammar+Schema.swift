@@ -34,7 +34,7 @@ public struct JSONSchemaFormatOptions: Sendable, Equatable {
 
     public init(
         strict: Bool = true,
-        whitespace: Whitespace = .none
+        whitespace: Whitespace = .any
     ) {
         self.strict = strict
         self.whitespace = whitespace

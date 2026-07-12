@@ -1,5 +1,7 @@
 #include "mlx_structured/grammar_matcher.h"
 #include "mlx_structured/error_handler.h"
+#include <cstdlib>
+#include <cstring>
 #include <dlpack/dlpack.h>
 #include <xgrammar/matcher.h>
 
@@ -39,6 +41,29 @@ extern "C" bool grammar_matcher_accept_token(void *grammar_matcher, int32_t toke
         return false;
     }
 }
+
+extern "C" bool grammar_matcher_accept_string(void *grammar_matcher, const char *string) {
+    try {
+        auto *grammar_matcher_ptr = static_cast<GrammarMatcher *>(grammar_matcher);
+        return grammar_matcher_ptr->AcceptString(string);
+    } catch (const std::exception &e) {
+        catch_error(e.what());
+        return false;
+    }
+}
+
+extern "C" char *grammar_matcher_find_jump_forward_string(void *grammar_matcher) {
+    try {
+        auto *grammar_matcher_ptr = static_cast<GrammarMatcher *>(grammar_matcher);
+        auto jump_forward_string = grammar_matcher_ptr->FindJumpForwardString();
+        return strdup(jump_forward_string.c_str());
+    } catch (const std::exception &e) {
+        catch_error(e.what());
+        return nullptr;
+    }
+}
+
+extern "C" void grammar_matcher_string_free(char *string) { free(string); }
 
 extern "C" void grammar_matcher_reset(void *grammar_matcher) {
     try {

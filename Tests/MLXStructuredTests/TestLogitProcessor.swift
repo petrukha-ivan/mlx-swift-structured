@@ -7,9 +7,11 @@ struct LogitProcessorTests {
     struct StubGrammarMatcher: GrammarMatcher {
         let mask: MLXArray
         func nextTokenMask() -> MLXArray { mask }
-        func advance(token: MLXArray) {}
+        func accept(token: MLXArray) {}
         func reset() {}
         func isTerminated() -> Bool { false }
+        func accept(string: String) {}
+        func findJumpForwardString() -> String { "" }
     }
 
     @Test func `Process pads short mask to logits width`() {

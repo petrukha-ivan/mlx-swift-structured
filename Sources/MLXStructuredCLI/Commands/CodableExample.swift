@@ -81,7 +81,7 @@ struct CodableStreamExample: AsyncParsableCommand {
         let context = try await model.modelContext()
         let prompt = MovieRecord.instruction + "\n" + MovieRecord.sample
         let input = try await context.processor.prepare(input: UserInput(prompt: prompt))
-        let stream = try await generate(input: input, context: context, schema: MovieRecord.schema, options: .init(whitespace: .indent(2)))
+        let stream = try await generate(input: input, context: context, schema: MovieRecord.schema)
         print("Output:", terminator: " ")
         fflush(stdout)
         for await generation in stream {
@@ -135,7 +135,7 @@ struct BenchmarkCommand: AsyncParsableCommand {
 
         print("\nStarting benchmark with constrained generation...")
         try await benchmark(label: "Constrained") {
-            let grammar = try Grammar.schema(MovieRecord.schema, indent: 2)
+            let grammar = try Grammar.schema(MovieRecord.schema)
             let stream = try await generate(input: input, parameters: parameters, context: context, grammar: grammar)
             return
                 await stream

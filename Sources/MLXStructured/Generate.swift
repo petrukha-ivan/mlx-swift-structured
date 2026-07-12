@@ -234,7 +234,6 @@ public func generate(
     context: ModelContext,
     grammar: Grammar,
 ) async throws -> AsyncStream<Generation> {
-    let sampler = parameters.sampler()
     let processor = try await GrammarMaskedLogitProcessor.from(
         configuration: context.configuration,
         grammar: grammar
@@ -244,8 +243,7 @@ public func generate(
         input: input,
         model: context.model,
         cache: cache,
-        processor: processor,
-        sampler: sampler,
+        grammarMatcher: processor.grammarMatcher,
         parameters: parameters
     )
 

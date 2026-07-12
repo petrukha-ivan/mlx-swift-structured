@@ -9,10 +9,37 @@ import Foundation
 import MLX
 import MLXLMCommon
 
+public struct CompositeLogitProcessor: LogitProcessor {
+
+    private var processors: [any LogitProcessor]
+
+    public init(_ processors: [any LogitProcessor]) {
+        self.processors = processors
+    }
+
+    public mutating func prompt(_ prompt: MLXArray) {
+        for index in processors.indices {
+            processors[index].prompt(prompt)
+        }
+    }
+
+    public func process(logits: MLXArray) -> MLXArray {
+        processors.reduce(logits) { logits, processor in
+            processor.process(logits: logits)
+        }
+    }
+
+    public mutating func didSample(token: MLXArray) {
+        for index in processors.indices {
+            processors[index].didSample(token: token)
+        }
+    }
+}
+
 public struct GrammarConstrainedTokenIterator: TokenIteratorProtocol {
 
     private let model: any LanguageModel
-    private let processor: GrammarMaskedLogitProcessor
+    private var processor: LogitProcessor
     private let sampler: LogitSampler
     private var state: LMOutput.State?
     private var current: LMInput.Text
@@ -30,16 +57,19 @@ public struct GrammarConstrainedTokenIterator: TokenIteratorProtocol {
         input: LMInput,
         model: any LanguageModel,
         cache: [KVCache]? = nil,
-        processor: GrammarMaskedLogitProcessor,
-        sampler: LogitSampler,
+        grammarMatcher: GrammarMatcher,
         parameters: GenerateParameters
     ) throws {
         self.model = model
-        self.processor = processor
-        self.sampler = sampler
         self.current = input.text
         self.cache = cache ?? model.newCache(parameters: parameters)
         self.parameters = parameters
+
+        let penaltiesProcessor = parameters.processor()
+        let grammarProcessor = GrammarMaskedLogitProcessor(grammarMatcher: grammarMatcher)
+        let compositeProcessor = CompositeLogitProcessor([penaltiesProcessor, grammarProcessor].compactMap(\.self))
+        processor = compositeProcessor
+        sampler = parameters.sampler()
 
         let start = Date.timeIntervalSinceReferenceDate
         try prepare(input)
@@ -77,7 +107,7 @@ public struct GrammarConstrainedTokenIterator: TokenIteratorProtocol {
         return sample(output.logits)
     }
 
-    private func sample(_ logits: MLXArray) -> MLXArray {
+    private mutating func sample(_ logits: MLXArray) -> MLXArray {
         let logits = processor.process(logits: logits[0..., -1, 0...])
         let token = sampler.sample(logits: logits)
         processor.didSample(token: token)

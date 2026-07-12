@@ -135,7 +135,7 @@ struct BenchmarkCommand: AsyncParsableCommand {
 
         print("\nStarting benchmark with constrained generation...")
         try await benchmark(label: "Constrained") {
-            let grammar = try Grammar.schema(MovieRecord.schema)
+            let grammar = try Grammar.schema(MovieRecord.schema, indent: 2)
             let stream = try await generate(input: input, parameters: parameters, context: context, grammar: grammar)
             return
                 await stream

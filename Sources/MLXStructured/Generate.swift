@@ -240,14 +240,13 @@ public func generate(
         grammar: grammar
     )
 
-    let iterator = try TokenIterator(
+    let iterator = try GrammarConstrainedTokenIterator(
         input: input,
         model: context.model,
         cache: cache,
         processor: processor,
         sampler: sampler,
-        prefillStepSize: parameters.prefillStepSize,
-        maxTokens: parameters.maxTokens
+        parameters: parameters
     )
 
     let (stream, _) = generateTask(

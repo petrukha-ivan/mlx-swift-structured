@@ -8,7 +8,7 @@ To use MLX Structured in your project, add the following to your `Package.swift`
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/petrukha-ivan/mlx-swift-structured", from: "0.1.0")
+    .package(url: "https://github.com/petrukha-ivan/mlx-swift-structured", from: "0.2.0")
 ]
 ```
 
@@ -166,11 +166,15 @@ for try await content in stream {
 }
 ```
 
-You can also create a logit processor manually and pass it to `TokenIterator`:
+To enable jump forwarding, pass the `.jumpForwarding` option to any of `generate` function:
 
 ```swift
-let processor = try await GrammarMaskedLogitProcessor.from(configuration: context.configuration, grammar: grammar)
-let iterator = try TokenIterator(input: input, model: context.model, processor: processor, sampler: sampler, maxTokens: 256)
+let stream = try await generate(
+    input: input,
+    options: .jumpForwarding,
+    context: context,
+    grammar: grammar
+)
 ```
 
 You can find more usage examples in the `MLXStructuredCLI` target and in the unit tests.
@@ -179,16 +183,17 @@ You can find more usage examples in the `MLXStructuredCLI` target and in the uni
 
 ### Performance
 
-In synthetic tests with the Llama model, a simple grammar, and a vocabulary of 60,000 tokens, the performance drop was less than 3%. However, with real models and more complex grammars, the results are slightly worse. In practice, you can expect generation speed to be no more than 10% slower. The exact slowdown depends on the model, vocabulary size, and the complexity of your grammar.
+Constrained decoding has effectively **zero-overhead**, so you can produce valid output without sacrificing generation speed. Moreover, in some cases, jump forwarding can make generation even faster by skipping model calls when the output is already determined by the current grammar state. For example, the model can skip predictable JSON syntax such as keys, brackets, and whitespace while generating tokens only for field values.
 
-| Model | Vocab Size | Plain (tokens/s) | Constrained (tokens/s) |
+| Model | Plain (tokens/s) | Constrained (tokens/s) | Jump forwarding (tokens/s) |
 | - | - | - | - |
-| Qwen3 4B | 151,936 | 100 | 94 (6.0% slower) |
-| Qwen3 14B | 151,936 | 33 | 32 (3.0% slower) |
-| Llama3.2 1B | 128,256 | 295 | 268 (9.2% slower) |
-| Llama3.2 3B | 128,256 | 129 | 119 (7.8% slower) |
-| Gemma3 4B | 262,144 | 98 | 92 (6.1% slower) |
-| Gemma3 270M | 262,144 | 485 | 444 (8.5% slower) |
+| Qwen3-0.6B-4bit | 394.1 | 394.3 | 604.4 |
+| Qwen3-4B-4bit | 98.9 | 98.3 | 173.1 |
+| Qwen3-8B-4bit | 58.1 | 58.1 | 100.9 |
+| Qwen3-14B-4bit | 32.8 | 32.4 | 51.0 |
+| Qwen3-32B-4bit | 14.4 | 14.5 | 23.6 |
+
+These benchmark results were collected on an Apple M3 Max using the `MLXStructuredCLI` benchmark command and the movie record extraction example from the next section. The speedup from jump forwarding depends on the grammar and the ratio of static to dynamic output. In the benchmark example, nearly half of the output is predefined syntax, so jump forwarding can approach almost a 2x speedup.
 
 ### Accuracy
 
